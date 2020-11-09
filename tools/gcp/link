@@ -14,10 +14,9 @@ BASE_PORT = 4440
 LOCAL_CONFIG_FILE = '/tmp/config.json'
 REMOTE_CONFIG_FILE = 'config.json'
 
-CMD_INTERNAL_HOST = """gcloud --format='value(networkInterfaces[0].networkIP)'
- compute instances list {instance_name}""".rstrip()
+CMD_HOST = "gcloud --format='value(networkInterfaces[0].networkIP)' compute instances list {instance_name}"
 HOSTS = [
-    subprocess.check_output(CMD_INTERNAL_HOST.format(
+    subprocess.check_output(CMD_HOST.format(
         instance_name=instance_name), shell=True).decode("utf-8").strip()
     for instance_name in INSTANCE_NAMES
 ]
@@ -27,19 +26,17 @@ HOSTS = [
     for index, host in enumerate(HOSTS)
 ]
 
-HOSTMAP = [
-    (name, host)
+HOSTMAP = {
+    name: host
     for name, host in zip(INSTANCE_NAMES, HOSTS)
-]
+}
 
-print("Hostmap:", json.dumps(
-    {name: host for (name, host) in HOSTMAP}, indent=2))
+print("Hostmap:", HOSTMAP)
 
 config = tfe.config.RemoteConfig(HOSTMAP)
-tfe.config.save(config, LOCAL_CONFIG_FILE)
+config.save(LOCAL_CONFIG_FILE)
 
-CMD_HOSTS_SCP = """gcloud compute scp {local_config_file}
- {instance_name}:{remote_config_file}""".rstrip()
+CMD_HOSTS_SCP = "gcloud compute scp {local_config_file} {instance_name}:{remote_config_file}".rstrip()
 for instance_name in INSTANCE_NAMES:
   subprocess.call(
       CMD_HOSTS_SCP.format(
